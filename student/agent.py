@@ -18,7 +18,7 @@ SNAKE_WEIGHTS = np.array([
 
 
 class Agent:
-    name = "AI3_Group_03"
+    name = "AI3_Group_011"
 
     def reset(self, seed: int | None = None) -> None:
         """Xóa cache/trạng thái giữa hai ván nếu thuật toán có dùng."""
