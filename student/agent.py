@@ -87,7 +87,7 @@ class Agent:
                 for r, c in cac_o_trong:
                     # 4. "Bot_turn : lấy bàn cờ nháp và sinh số 2 hoặc 4 vào ô trống"
                     
-                    # --- TRƯỜNG HỢP SINH SỐ 2 ---
+                   
                     ban_co_nhap_1[r, c] = 2
                     
                     # 5. "My-turn : vòng lặp các hướng của bàn cờ nháp -> sinh bàn cờ nháp 2"
