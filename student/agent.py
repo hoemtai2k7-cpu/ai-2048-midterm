@@ -14,8 +14,8 @@ SNAKE_WEIGHTS = np.array([
     [2**7,  2**6,  2**5,  2**4],
     [2**8,  2**9,  2**10, 2**11],
     [2**15, 2**14, 2**13, 2**12],
-], dtype=float)
-
+], dtype=np.int64)
+_MOVES = (Move.UP, Move.DOWN, Move.LEFT, Move.RIGHT)
 
 class Agent:
     name = "AI3_Group_011"
@@ -25,57 +25,67 @@ class Agent:
 
     @staticmethod
     def evaluate(board: np.ndarray, merge_score: int) -> float:
-        empty_cells = int(np.count_nonzero(board == 0))
-        snake_score = float(np.vdot(board, SNAKE_WEIGHTS))
-        return snake_score + 1000.0 * empty_cells + merge_score * 10.0
+        empty_cells = 16 - int(np.count_nonzero(board))
+        snake_score = int(np.vdot(board, SNAKE_WEIGHTS))
+        empty_weight = max(1000.0, float(board.max()) * 150)
+        return snake_score + empty_weight * empty_cells + merge_score * 10.0
 
     def choose_move(self, obs: Observation, time_limit_ms: float) -> Move:
         if not obs.legal_moves:
             raise ValueError("choose_move được gọi ở trạng thái kết thúc")
+        if len(obs.legal_moves) == 1:
+            return obs.legal_moves[0]
 
         best_move = obs.legal_moves[0]
         best_value = float("-inf")
+        eval_fn = self.evaluate
+
         if time_limit_ms < 150.0:
             for move in obs.legal_moves:
                 ban_co_nhap_1, merge_score_1, _ = move_board(obs.board, move)
-                gia_tri_cua_move = self.evaluate(ban_co_nhap_1, merge_score_1)
+                gia_tri_cua_move = eval_fn(ban_co_nhap_1, merge_score_1)
                 if gia_tri_cua_move > best_value:
                     best_value = gia_tri_cua_move
                     best_move = move
             return best_move
+        
         for move in obs.legal_moves:
             ban_co_nhap_1, merge_score_1, _ = move_board(obs.board, move)
             cac_o_trong = np.argwhere(ban_co_nhap_1 == 0)
             k = len(cac_o_trong)
             if k == 0:
-                gia_tri_cua_move = self.evaluate(ban_co_nhap_1, merge_score_1)
+                gia_tri_cua_move = eval_fn(ban_co_nhap_1, merge_score_1)
             else:
                 tong_diem_k_o = 0.0
                 for r, c in cac_o_trong:
                     ban_co_nhap_1[r, c] = 2
                     score2 = float("-inf")
                     co_nuoc_di_2 = False
-                    for move_2 in (Move.UP, Move.DOWN, Move.LEFT, Move.RIGHT):
+                    for move_2 in _MOVES:
                         ban_co_nhap_2, merge_score_2, changed = move_board(ban_co_nhap_1, move_2)
                         if changed:
                             co_nuoc_di_2 = True
-                            diem_nhap_2 = self.evaluate(ban_co_nhap_2, merge_score_1 + merge_score_2)
+                            diem_nhap_2 = eval_fn(ban_co_nhap_2, merge_score_1 + merge_score_2)
                             if diem_nhap_2 > score2:
                                 score2 = diem_nhap_2
+
                     if not co_nuoc_di_2:
-                        score2 = self.evaluate(ban_co_nhap_1, merge_score_1)
+                        score2 = eval_fn(ban_co_nhap_1, merge_score_1) - 1e9
+
                     ban_co_nhap_1[r, c] = 4
                     score4 = float("-inf")
                     co_nuoc_di_4 = False
-                    for move_2 in (Move.UP, Move.DOWN, Move.LEFT, Move.RIGHT):
+
+                    for move_2 in _MOVES:
                         ban_co_nhap_2, merge_score_2, changed = move_board(ban_co_nhap_1, move_2)
                         if changed:
                             co_nuoc_di_4 = True
-                            diem_nhap_2 = self.evaluate(ban_co_nhap_2, merge_score_1 + merge_score_2)
+                            diem_nhap_2 = eval_fn(ban_co_nhap_2, merge_score_1 + merge_score_2)
                             if diem_nhap_2 > score4:
                                 score4 = diem_nhap_2
+
                     if not co_nuoc_di_4:
-                        score4 = self.evaluate(ban_co_nhap_1, merge_score_1)
+                        score4 = eval_fn(ban_co_nhap_1, merge_score_1) - 1e9
 
                     ban_co_nhap_1[r, c] = 0
                     diem_1_o_trong = 0.9 * score2 + 0.1 * score4
